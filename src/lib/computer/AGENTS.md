@@ -1,1 +1,2 @@
 - Promo/explainer videos use create_motion_video (Pillow glass frames piped to FFmpeg inside E2B) with narration from create_voiceover (Cartesia Sonic SSE with word timestamps, uploaded to the sandbox via writeFile); motion.py, motion.ts and the prompt workflow stay in sync. Why: Ceyo's signature style is deterministic and multilingual without video-generation models.
+- Code tools (grep_code, code_outline, git without push, export_project_zip) build bash from quoted data in codeTools.ts and stay inside /home/user. Why: inputs must never become shell code or reach host paths.

@@ -590,3 +590,4 @@
 - [x] Senior-engineer explore → edit → run → fix loop in bot instructions
 - [x] Friendly completion note; files/ZIP only on explicit request
 - [x] Premium motion-first design rules, no design-source mentions to users
+- [x] grep_code, code_outline, git, export_project_zip (on request only)
