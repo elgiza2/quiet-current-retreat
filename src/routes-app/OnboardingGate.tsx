@@ -24,8 +24,14 @@ export function OnboardingGate({ children }: { children: React.ReactNode }) {
         if (completedAccounts.has(user.id)) { if (active) setState("ok"); return; }
         const { data: p, error: profileError } = await supabase.from("profiles").select("onboarding_completed").eq("id", user.id).maybeSingle();
         if (profileError) throw profileError;
-        if (p?.onboarding_completed) completedAccounts.add(user.id);
-        if (active) setState(p?.onboarding_completed ? "ok" : "setup");
+        let done = !!p?.onboarding_completed;
+        // Accounts that already own bots were set up before the setup flag existed.
+        if (!done) {
+          const { count } = await supabase.from("bots").select("id", { count: "exact", head: true }).eq("owner_id", user.id);
+          done = (count ?? 0) > 0;
+        }
+        if (done) completedAccounts.add(user.id);
+        if (active) setState(done ? "ok" : "setup");
       } catch { if (active) setState("error"); }
     })();
     return () => { active = false; };

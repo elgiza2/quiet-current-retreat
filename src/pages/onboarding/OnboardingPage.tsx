@@ -88,6 +88,9 @@ export default function OnboardingPage() {
         if (profileError || !p) throw new Error("Profile unavailable");
         if (!alive) return;
         if (p.onboarding_completed) return nav("/", { replace: true });
+        const { count } = await supabase.from("bots").select("id", { count: "exact", head: true }).eq("owner_id", data.user.id);
+        if (!alive) return;
+        if ((count ?? 0) > 0) return nav("/", { replace: true });
         setUid(data.user.id);
         if (p.display_name) setName(p.display_name);
         if (p.avatar_url) setAvatar(p.avatar_url);

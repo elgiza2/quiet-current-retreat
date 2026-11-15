@@ -208,11 +208,14 @@ const AuthPage = () => {
 
     try {
       setEmail(normalizedEmail);
-      setUserExists(false);
       setHas2FA(false);
       setPassword("");
       setNewPassword("");
-      setStep("password");
+      const { emailHasAccount } = await import("@/lib/authLookup.functions");
+      const lookup = await emailHasAccount({ data: { email: normalizedEmail } }).catch(() => ({ known: false, exists: false }));
+      setUserExists(lookup.known && lookup.exists);
+      // Known new email → create the account; existing or unknown → sign in.
+      setStep(lookup.known && !lookup.exists ? "create-password" : "password");
     } catch (e: any) {
       notifyMobileIntroError(translateAuthError(e, "couldNotSendCode"));
     } finally {
