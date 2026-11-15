@@ -1,0 +1,1 @@
+- Promo/explainer videos use create_motion_video (Pillow glass frames piped to FFmpeg inside E2B) with narration from create_voiceover (Cartesia Sonic SSE with word timestamps, uploaded to the sandbox via writeFile); motion.py, motion.ts and the prompt workflow stay in sync. Why: Ceyo's signature style is deterministic and multilingual without video-generation models.

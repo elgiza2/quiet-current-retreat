@@ -345,6 +345,9 @@ bunx vitest run
 
 ## Current work
 
+- Liquid-glass motion videos: bots now have create_voiceover (Cartesia Sonic, any language, masculine/feminine, accent, emotion, measured word captions) and create_motion_video (Ceyo glass style, 16:9/9:16/1:1/4:5, Arabic RTL, ambient or supplied music with ducking, up to 60 s).
+- Verification: 41 tests in src/lib/computer pass; live runs on a real E2B computer with real Cartesia voices produced a 16:9 English video (Daniel, 11 s) and a 9:16 Arabic video (Layan, 12 s), frames and loudness checked. Not checked: a full request through the signed-in chat screen.
+
 ### CoArena primary model — 2026-11-14
 - Agent/chat text now tries CoArena `gpt-6-1-terra` first (key in provider_api_keys, provider `coarena`; free tier $5/day, 30 req/min, 2 concurrent), falling back to Cerebras Qwen on any CoArena error. Fixed duplicate `update_plan` tool definitions that CoArena rejected.
 - Verification: 17 agent test files / 73 tests pass; live signed-in API runs on the test account: USD/EGP + Cairo weather, AI news summary in 5 points (12 tool calls, 74 s), iPhone 17 Pro Excel for 3 countries (export_file, 119 s), all on CoArena. Not checked through the chat screen UI.

@@ -1,3 +1,9 @@
+## Liquid-glass motion videos + voiceover — 2026-11-15
+- [x] create_voiceover (Cartesia, any language, male/female, word timings)
+- [x] create_motion_video glass renderer (title, cards, chat, image, cta; RTL)
+- [x] Live E2B runs: English 16:9 and Arabic 9:16
+- [ ] Full request through the signed-in chat screen
+
 ## Model-free video editing — 2026-11-15
 - [x] Add deterministic montage and media inspection on the existing isolated computer, with trim/zoom, timed Arabic captions, audio mixing and private MP4 delivery.
 - [x] Add attributed stock discovery without a new provider key; retain the existing image-slide tool.
