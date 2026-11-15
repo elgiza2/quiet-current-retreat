@@ -230,32 +230,6 @@ window.addEventListener("unhandledrejection", (e) => {
 const savedBubble = localStorage.getItem("userBubbleColor");
 if (savedBubble) document.documentElement.style.setProperty("--user-bubble", savedBubble);
 
-// Keep `position: fixed` elements pinned to the visual viewport on mobile
-// (iOS Safari shifts fixed elements when the URL bar / keyboard show or hide).
-// Components can read `--kb-offset` to translate themselves above the keyboard.
-(() => {
-  const vv = window.visualViewport;
-  if (!vv) return;
-  let raf = 0;
-  const apply = () => {
-    raf = 0;
-    // True keyboard height = layout viewport bottom - visual viewport bottom.
-    // Includes offsetTop so the bar doesn't drift when the visual viewport
-    // is scrolled (iOS scrolls focused inputs into view).
-    const delta = window.innerHeight - vv.height - vv.offsetTop;
-    const offset = delta > 120 ? Math.round(delta) : 0;
-    document.documentElement.style.setProperty("--kb-offset", `${offset}px`);
-  };
-  const update = () => {
-    if (raf) return;
-    raf = requestAnimationFrame(apply);
-  };
-  update();
-  vv.addEventListener("resize", update);
-  vv.addEventListener("scroll", update);
-  window.addEventListener("orientationchange", update);
-})();
-
 // Global first-tap safety net for touch devices (see lib/tapReliability).
 installTapReliability();
 
