@@ -47,7 +47,7 @@ export function createComputer(): Computer {
         return { ok: false, output: e instanceof Error ? e.message : "The cloud computer could not start." };
       }
       const ctrl = new AbortController();
-      const timer = setTimeout(() => ctrl.abort(), Math.min(Math.max(timeoutMs, 1000), 120_000));
+      const timer = setTimeout(() => ctrl.abort(), Math.min(Math.max(timeoutMs, 1000), 300_000));
       try {
         const res = await fetch(`https://49999-${sb.id}.${sb.domain}/execute`, {
           method: "POST",
@@ -65,7 +65,7 @@ export function createComputer(): Computer {
       }
     },
     async prepareMedia() {
-      return computer.run("%pip -q install imageio-ffmpeg\nimport imageio_ffmpeg,os\nff=imageio_ffmpeg.get_ffmpeg_exe()\nos.makedirs('/home/user/.local/bin',exist_ok=True)\nlink='/home/user/.local/bin/ffmpeg'\nif not os.path.exists(link): os.symlink(ff,link)\nprint('ffmpeg ready:',ff)", "python", 120000);
+      return computer.run("%pip -q install imageio-ffmpeg pillow arabic-reshaper python-bidi\nimport imageio_ffmpeg,os\nff=imageio_ffmpeg.get_ffmpeg_exe()\nos.makedirs('/home/user/.local/bin',exist_ok=True)\nlink='/home/user/.local/bin/ffmpeg'\nif not os.path.exists(link): os.symlink(ff,link)\nprint('ffmpeg ready:',ff)", "python", 120000);
     },
     async readFile(path) {
       if (!path.startsWith("/home/user/") || path.split("/").includes("..")) throw new Error("Export files only from /home/user/");

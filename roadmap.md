@@ -1,3 +1,8 @@
+## Model-free video editing — 2026-11-15
+- [x] Add deterministic montage and media inspection on the existing isolated computer, with trim/zoom, timed Arabic captions, audio mixing and private MP4 delivery.
+- [x] Add attributed stock discovery without a new provider key; retain the existing image-slide tool.
+- [x] Run 34 regressions, three local renderer cases and actual E2B render/read; signed-in Akoya created a private MP4, reopened and played at 720×1280 / 2 seconds. Long hosted renders and automatic word alignment are not verified/implemented; no background-lifetime guarantee.
+
 ## Independence from Lovable — 2026-11-15
 - [x] Audit dependencies; migrate original scheduler signing value into external Supabase Vault with private read-back; runtime uses Vault only. Replace composer gateway transcription and direct-only GitHub transport; remove Lovable defaults for new callbacks.
 - [ ] Verify independent deployment and scheduled callback before account deletion — needs deployment access/current source on independent host and direct GitHub authorization to update scheduler address.
