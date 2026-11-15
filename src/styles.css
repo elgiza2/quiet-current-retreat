@@ -156,3 +156,13 @@
 }
 [dir="rtl"] .thinking-shimmer { animation-direction: reverse; }
 @keyframes thinking-sweep { from { background-position: 125% 0; } to { background-position: -125% 0; } }
+
+/* Social post cards: platform brand accents */
+.social-story-ring { background: conic-gradient(from 210deg, oklch(0.75 0.17 75), oklch(0.62 0.24 15), oklch(0.55 0.25 330), oklch(0.75 0.17 75)); }
+.social-verified { color: oklch(0.62 0.19 250); }
+.social-follow { background: oklch(0.62 0.19 250); color: oklch(0.99 0 0); }
+.social-follow-text { color: oklch(0.62 0.19 250); }
+.social-logo-instagram { color: oklch(0.6 0.24 0); }
+.social-logo-youtube { color: oklch(0.58 0.24 28); }
+.social-logo-facebook, .social-logo-linkedin { color: oklch(0.55 0.18 255); }
+.social-logo-reddit { color: oklch(0.65 0.22 40); }

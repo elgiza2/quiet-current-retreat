@@ -11,11 +11,13 @@ function logoSources(item: Integration): string[] {
     .toLowerCase()
     .replace(/[_\s]+/g, "")
     .replace(/[^a-z0-9-]/g, "");
-  if (item.domain) {
-    out.push(`https://www.google.com/s2/favicons?domain=${item.domain}&sz=128`);
-    out.push(`https://unavatar.io/${item.domain}?fallback=false`);
-  }
+  // Simple Icons first: crisp brand marks; then site favicons that privacy browsers don't block.
   if (slug) out.push(`https://cdn.simpleicons.org/${slug}`);
+  if (item.domain) {
+    out.push(`https://icons.duckduckgo.com/ip3/${item.domain}.ico`);
+    out.push(`https://unavatar.io/${item.domain}?fallback=false`);
+    out.push(`https://www.google.com/s2/favicons?domain=${item.domain}&sz=128`);
+  }
   return out;
 }
 

@@ -12,6 +12,7 @@ export const socialItemSchema = z.object({
   following: z.number().nonnegative().optional(), posts: z.number().nonnegative().optional(),
   handle: z.string().max(100).optional(), avatar: z.string().url().optional(),
   verified: z.boolean().optional(), date: z.string().max(40).optional(), duration: z.number().nonnegative().optional(),
+  video: z.string().url().optional(),
 });
 export type SocialItem = z.infer<typeof socialItemSchema>;
 
@@ -43,7 +44,8 @@ export function socialResults(rows: unknown[]): SocialItem[] {
       avatar: https(text(row, ["ownerProfilePicUrl", "profilePicUrl", "authorAvatar"]) || text(authorMeta, ["avatar"])),
       verified: typeof row.verified === "boolean" ? row.verified : typeof row.isVerified === "boolean" ? row.isVerified : undefined,
       date: text(row, ["timestamp", "createdAt", "date", "uploadDate", "createTimeISO"])?.slice(0, 40),
-      duration: count(row, ["videoDuration", "duration"]) };
+      duration: count(row, ["videoDuration", "duration"]),
+      video: (() => { const v = https(text(row, ["videoUrl", "videoPlayUrl", "downloadUrl"])); return v && v !== url && !/instagram\.com\/|tiktok\.com\/@|youtube\.com|youtu\.be/.test(v) ? v : undefined; })() };
     const checked = socialItemSchema.safeParse(item);
     return checked.success ? [checked.data] : [];
   });

@@ -32,11 +32,15 @@ function NamedLink({ url, label }: { url: URL; label?: ReactNode }) {
     return () => { controller.abort(); clearTimeout(timer); };
   }, [url.href, named, plain, path, host]);
   return <a href={url.href} target="_blank" rel="noopener noreferrer" title={title} className="cx-named-link">
-    {iconFailed ? <Globe size={14} aria-hidden /> : <img src={siteIcon(url.hostname)} alt="" width={16} height={16} referrerPolicy="no-referrer" onError={() => setIconFailed(true)} />}
+    {iconFailed ? <Globe size={14} aria-hidden /> : <img src={siteIcon(url.hostname)} alt="" width={16} height={16} referrerPolicy="no-referrer" onError={(e) => { const img = e.currentTarget; if (!img.dataset.fb) { img.dataset.fb = "1"; img.src = siteIconFallback(url.hostname); } else setIconFailed(true); }} />}
     <span dir="auto">{title}</span><ArrowUpRight size={12} aria-hidden />
   </a>;
 }
-/** Simple, reliable favicon source for any site (Google's public favicon service, host only — no path or query). */
-export function siteIcon(host: string, size = 64) {
+/** Favicon source for any site. DuckDuckGo's icon service is not blocked by privacy browsers (Brave shields block Google's). */
+export function siteIcon(host: string, _size = 64) {
+  return `https://icons.duckduckgo.com/ip3/${encodeURIComponent(host.replace(/^www\./, ""))}.ico`;
+}
+/** Second favicon source used when the first fails. */
+export function siteIconFallback(host: string, size = 64) {
   return `https://www.google.com/s2/favicons?domain=${encodeURIComponent(host)}&sz=${size}`;
 }

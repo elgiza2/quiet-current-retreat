@@ -261,7 +261,10 @@ export async function runAgentLoop(
     const sid = `${turn}-${step}`;
     let n = 0;
     for (;;) {
-      const { value, done } = await reader.read();
+      let chunk: ReadableStreamReadResult<Uint8Array>;
+      // A dropped stream surfaces as a raw "fetch failed"; give the user a clear, actionable message instead.
+      try { chunk = await reader.read(); } catch (error) { if (signal.aborted) throw error; throw new Error("The connection dropped, send it again in a moment."); }
+      const { value, done } = chunk;
       if (done) break;
       buf += dec.decode(value, { stream: true });
       let i: number;
