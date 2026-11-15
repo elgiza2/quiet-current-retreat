@@ -56,4 +56,3 @@
 - Wallet creation is serialized in service-only database functions; transfer reservations persist by owner and operation key, and unknown outcomes are never replayed automatically. Why: concurrent requests must not replace keys or duplicate transfers.
 - Account deletion reauthenticates the caller and removes owned artifacts/data before deleting Supabase Auth; interrupted jobs stop for review rather than repeating external side effects. Why: destructive operations require verified ownership and honest completion.
 - Transactional email components share the CeyoMessage shell; hosted Auth templates are updated only through an operator-only Management API script and read-back. Why: branding must not replace native OTP or expose credentials.
-- Read-only lookups requested together in one model step run concurrently, and discovery calls are cached per task. Why: fewer wasted steps and faster answers.
