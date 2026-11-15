@@ -4,15 +4,15 @@ export type ModelRole = "orchestrator" | "fast" | "web" | "coding" | "vision";
 /** Ordered CoArena model chains: the first available model wins, then the next, then Cerebras. */
 export const MODEL_ROLES: Record<ModelRole, string[]> = {
   /** Plans and finishes big tasks only. */
-  orchestrator: ["gpt-6-1-terra", "gemini-4-carbon"],
+  orchestrator: ["gpt-6-1-terra", "gemini-4-carbon", "gpt-6-luna"],
   /** Everyday chat and simple tool calls. */
   fast: ["gpt-6-luna", "gpt-6-1-sol"],
   /** Browsing, search and multi-step web work. */
-  web: ["gpt-6-1-sol", "grok-4-7", "gpt-6-1-terra"],
+  web: ["gpt-6-1-sol", "grok-4-7", "gpt-6-1-terra", "gpt-6-luna"],
   /** Code, files and the cloud computer. */
-  coding: ["gemini-4-carbon", "gpt-6-1-terra"],
+  coding: ["gemini-4-carbon", "gpt-6-1-terra", "gpt-6-luna"],
   /** Screenshots and user photos. */
-  vision: ["gemini-4-carbon", "gpt-6-1-terra"],
+  vision: ["gemini-4-carbon", "gpt-6-1-terra", "gpt-6-luna"],
 };
 
 const CODE_TOOLS = /^(run_code|file_editor|computer|run_python|run_shell|create_file|edit_file|save_file|github)/i;
