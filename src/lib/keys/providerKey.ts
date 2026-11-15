@@ -2,7 +2,7 @@
  *  (least-recently-used), falling back to the environment variable. */
 import { createClient } from "@supabase/supabase-js";
 
-export type KeyProvider = "apify" | "cerebras" | "browserbase" | "composio" | "anam" | "cartesia" | "deepgram" | "telnyx" | "kashier_merchant_id" | "kashier_api_key" | "e2b";
+export type KeyProvider = "apify" | "cerebras" | "browserbase" | "composio" | "anam" | "cartesia" | "deepgram" | "telnyx" | "kashier_merchant_id" | "kashier_api_key" | "e2b" | "pexels" | "pixabay";
 
 const ENV: Record<KeyProvider, string> = {
   apify: "APIFY_API_KEY",
@@ -16,6 +16,8 @@ const ENV: Record<KeyProvider, string> = {
   kashier_merchant_id: "KASHIER_MERCHANT_ID",
   kashier_api_key: "KASHIER_API_KEY",
   e2b: "E2B_API_KEY",
+  pexels: "PEXELS_API_KEY",
+  pixabay: "PIXABAY_API_KEY",
 };
 
 export async function getProviderKey(provider: KeyProvider): Promise<string | null> {

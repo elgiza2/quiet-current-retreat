@@ -139,7 +139,7 @@ def caption_image(c, index, active=None):
     """active: index of the highlighted word for karaoke; whole lines are kept identical across states."""
     pos = c['position']
     big = style == 'bold' or pos == 'center' and style != 'minimal'
-    size = int(short * (0.085 if big else 0.052 if style != 'minimal' else 0.042))
+    size = int(short * (0.085 if big else 0.06 if style != 'minimal' else 0.046))
     words = c['text'].split()
     arabic = bool(re.search('[\\u0600-\\u06ff]', c['text']))
     direction = {'direction': 'rtl'} if arabic and raqm else {}
@@ -172,22 +172,15 @@ def caption_image(c, index, active=None):
     for l, lw in zip(lines, widths):
         text = ' '.join(x for _, x in l)
         if style == 'karaoke' and active is not None:
-            # Word-by-word highlight: draw base line, then overdraw the active word in the accent colour.
-            draw.text((w / 2, y), shape(text), font=font, anchor='mt', fill=(255, 255, 255, 235), stroke_width=max(2, size // 14), stroke_fill=(0, 0, 0, 220), **direction)
-            idxs = [i for i, _ in l]
-            if active in idxs:
-                k = idxs.index(active)
-                order = list(range(len(l)))[::-1] if arabic else list(range(len(l)))
-                before = ' '.join(l[j][1] for j in order[:order.index(k)]) if arabic else ' '.join(x for _, x in l[:k])
-                start_x = w / 2 - lw / 2
-                if arabic:
-                    after = ' '.join(x for _, x in l[:k])
-                    offset = draw.textlength(shape(after + ' ') if after else '', font=font, **direction)
-                    word_w = draw.textlength(shape(l[k][1]), font=font, **direction)
-                    x0 = w / 2 + lw / 2 - offset - word_w
-                else:
-                    x0 = start_x + (draw.textlength(before + ' ', font=font) if before else 0)
-                draw.text((x0, y), shape(l[k][1]), font=font, anchor='lt', fill=ACCENT, stroke_width=max(2, size // 14), stroke_fill=(0, 0, 0, 220), **direction)
+            # Place each word separately (right-to-left for Arabic) so the active word is highlighted exactly.
+            space = draw.textlength(' ', font=font)
+            sizes = [draw.textlength(shape(x), font=font, **direction) for _, x in l]
+            total = sum(sizes) + space * (len(l) - 1)
+            x = w / 2 + total / 2 if arabic else w / 2 - total / 2
+            for (i, word), ww in zip(l, sizes):
+                x0 = x - ww if arabic else x
+                draw.text((x0, y), shape(word), font=font, anchor='lt', fill=ACCENT if i == active else (255, 255, 255, 235), stroke_width=max(2, size // 14), stroke_fill=(0, 0, 0, 220), **direction)
+                x = x0 - space if arabic else x + ww + space
         elif style == 'minimal':
             draw.text((w / 2, y + 2), shape(text), font=font, anchor='mt', fill=(0, 0, 0, 140), **direction)
             draw.text((w / 2, y), shape(text), font=font, anchor='mt', fill=(255, 255, 255, 240), **direction)

@@ -20,12 +20,14 @@ export function telegramAdminIds(config: string | undefined): number[] {
   return (config ?? "").split(",").map((v) => v.trim()).filter((v) => /^[1-9]\d*$/.test(v)).map(Number).filter(Number.isSafeInteger);
 }
 
-type ProviderId = "cerebras" | "browserbase" | "composio" | "e2b";
+type ProviderId = "cerebras" | "browserbase" | "composio" | "e2b" | "pexels" | "pixabay";
 const PROVIDERS: Record<ProviderId, { label: string; icon: string; use: string }> = {
   cerebras: { label: "Cerebras", icon: "🧠", use: "ردود الوكلاء" },
   browserbase: { label: "Browserbase", icon: "🌐", use: "الكمبيوتر وتصفح الويب" },
   composio: { label: "Composio", icon: "🔌", use: "التكاملات الخارجية" },
   e2b: { label: "E2B", icon: "💻", use: "كمبيوتر تشغيل الأكواد والملفات" },
+  pexels: { label: "Pexels", icon: "🎬", use: "لقطات وصور سينمائية للمونتاج" },
+  pixabay: { label: "Pixabay", icon: "🎞️", use: "فيديوهات وصور مجانية للمونتاج" },
 };
 const IDS = Object.keys(PROVIDERS) as ProviderId[];
 
@@ -35,6 +37,8 @@ export function normalizeProvider(raw: string): ProviderId | null {
   if (v === "browserbase" || v === "browser" || v === "b") return "browserbase";
   if (v === "composio" || v === "x") return "composio";
   if (v === "e2b" || v === "computer") return "e2b";
+  if (v === "pexels") return "pexels";
+  if (v === "pixabay") return "pixabay";
   return null;
 }
 
@@ -45,6 +49,10 @@ async function validateKey(p: ProviderId, key: string): Promise<boolean> {
         ? await fetch("https://api.cerebras.ai/v1/models", { headers: { Authorization: `Bearer ${key}` } })
         : p === "browserbase"
           ? await fetch("https://api.browserbase.com/v1/projects", { headers: { "X-BB-API-Key": key } })
+          : p === "pexels"
+            ? await fetch("https://api.pexels.com/v1/search?query=test&per_page=1", { headers: { Authorization: key } })
+            : p === "pixabay"
+              ? await fetch(`https://pixabay.com/api/?key=${encodeURIComponent(key)}&q=test&per_page=3`)
           : p === "e2b"
             ? await fetch("https://api.e2b.app/sandboxes", { headers: { "X-API-Key": key } })
             : await fetch("https://backend.composio.dev/api/v3/auth_configs?limit=1", { headers: { "x-api-key": key } });
@@ -64,6 +72,8 @@ const HELP = [
   "<code>/add_browserbase KEY</code>",
   "<code>/add_composio KEY</code>",
   "<code>/add_e2b KEY</code>",
+  "<code>/add_pexels KEY</code>",
+  "<code>/add_pixabay KEY</code>",
   "",
   "/keys — عرض المفاتيح",
   "/del رقم — حذف مفتاح",

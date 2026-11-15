@@ -61,3 +61,29 @@ describe("model-free montage", () => {
     expect(JSON.parse(await searchStockMedia({ query: "city" })).results).toEqual([]);
   });
 });
+describe("cinematic editing options", () => {
+  it("accepts grades, transitions, motion and karaoke with real word timings", () => {
+    const a = montageInput.parse({ scenes: [{ ...scene, motion: "ken_burns" }, { ...scene, kind: "video", speed: 2 }], grade: "teal_orange", transition: "whip", letterbox: true, grain: 0.3, caption_style: "karaoke", captions: [{ text: "hello world", start: 0, end: 2, words: [{ text: "hello", start: 0, end: 0.8 }, { text: "world", start: 0.9, end: 1.8 }] }] });
+    expect(a.grade).toBe("teal_orange");
+    expect(a.scenes[1].speed).toBe(2);
+  });
+  it("rejects karaoke words that do not match the caption text", () => {
+    expect(montageInput.safeParse({ scenes: [scene], captions: [{ text: "hello world", start: 0, end: 2, words: [{ text: "hello", start: 0, end: 1 }] }] }).success).toBe(false);
+  });
+  it("rejects word timings outside their caption", () => {
+    expect(montageInput.safeParse({ scenes: [scene], captions: [{ text: "hi", start: 0, end: 1, words: [{ text: "hi", start: 0.5, end: 1.6 }] }] }).success).toBe(false);
+  });
+  it("rejects unknown grades and invalid accent colours", () => {
+    expect(montageInput.safeParse({ scenes: [scene], grade: "instagram" }).success).toBe(false);
+    expect(montageInput.safeParse({ scenes: [scene], accent: "red" }).success).toBe(false);
+  });
+  it("skips keyed libraries when no key is added and reports them", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => ({}) }));
+    const result = JSON.parse(await searchStockMedia({ query: "city", source: "all" }));
+    expect(result.unavailable).toEqual(expect.arrayContaining(["pexels (no key added)", "pixabay (no key added)"]));
+  });
+  it("drops non-HTTPS asset links from libraries", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => ({ results: [{ url: "http://x.org/a.jpg", foreign_landing_url: "https://x.org", license: "by" }] }) }));
+    expect(JSON.parse(await searchStockMedia({ query: "city", kind: "image", source: "openverse" })).results).toEqual([]);
+  });
+});

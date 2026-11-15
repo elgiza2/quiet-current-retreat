@@ -569,3 +569,13 @@
 
 ## Apify credential — 2026-11-15
 - [x] Store the supplied Apify credential in the existing server-only provider pool and verify restricted access; do not link a Lovable connector. Server read-back confirms active status; public read is blocked. No Apify tools or paid Actor runs added in this credential-only pass.
+
+## Cinematic editor upgrade — 2026-11-15
+- [x] Footage from Pexels/Pixabay (owner keys via key bot), Wikimedia, Openverse, NASA, Internet Archive
+- [x] Measured shot cuts, brightness/motion, beats, silences, keyframe sheet (analyze_media)
+- [x] Colour grades, letterbox, grain, vignette, 9 transitions, ken-burns/pans, speed
+- [x] iOS-style glass, bold, minimal and karaoke captions (IBM Plex Sans Arabic)
+- [x] Block private-network asset downloads and redirects
+- [ ] Add Pexels/Pixabay keys (owner, via /add_pexels, /add_pixabay)
+- [ ] Live chat run on a real E2B computer with a signed-in account
+- [ ] Automatic speech-to-word timing for karaoke captions
