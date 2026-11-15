@@ -10,7 +10,7 @@ import { normalizeLanguage } from "@/lib/computer/execution";
 import { createBotBrowser } from "@/lib/computer/browser.server";
 import { promoVideoScript } from "@/lib/computer/promoVideo";
 import { montageToolProperties, inspectMediaScript } from "@/lib/computer/montage";
-import { createVideoMontage, createMotionVideo, createVoiceover } from "@/lib/computer/videoTools";
+import { createVideoMontage, createMotionVideo, createVoiceover, createFullVideo } from "@/lib/computer/videoTools";
 import { motionToolProperties } from "@/lib/computer/motion";
 import { searchStockMedia, STOCK_SOURCES } from "@/lib/computer/stockMedia";
 import { transcribeWords } from "@/lib/computer/wordTiming";
@@ -33,6 +33,14 @@ const tools = [
       name: "web_search",
       description: "Search the web for fresh information. Returns titles, links and snippets.",
       parameters: { type: "object", properties: { query: { type: "string" } }, required: ["query"] },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "news_search",
+      description: "Fast live news and trends (seconds, no browser): latest headlines with source and time for a topic, or top stories when the topic is empty. Use for anything happening now.",
+      parameters: { type: "object", properties: { topic: { type: "string" }, lang: { type: "string", description: "ISO code, e.g. ar, en" } }, required: [] },
     },
   },
   {
@@ -110,6 +118,7 @@ async function runTool(name: string, args: any, computer: Computer): Promise<str
     }
     return out.join("\n") || "No results for this wording. Retry now with a shorter query, English keywords, or read_url on a likely site.";
   }
+  if (name === "news_search") return newsSearch(String(args.topic ?? ""), String(args.lang ?? "en"));
   if (name === "read_url") {
     const url = String(args.url ?? "");
     if (!/^https?:\/\//.test(url)) return "Invalid URL.";
@@ -120,6 +129,24 @@ async function runTool(name: string, args: any, computer: Computer): Promise<str
   }
   return "Unknown tool.";
 }
+
+/** Google News RSS: live headlines without opening a browser. */
+export async function newsSearch(topic: string, lang = "en"): Promise<string> {
+  const l = /^[a-z]{2}$/.test(lang) ? lang : "en";
+  const region = l === "ar" ? "EG" : "US";
+  const base = topic.trim() ? `https://news.google.com/rss/search?q=${encodeURIComponent(topic.trim() + " when:7d")}&` : "https://news.google.com/rss?";
+  const xml = await fetch(`${base}hl=${l}&gl=${region}&ceid=${region}:${l}`, { signal: AbortSignal.timeout(10_000) }).then((r) => r.text()).catch(() => "");
+  const items = [...xml.matchAll(/<item>([\s\S]*?)<\/item>/g)].slice(0, 12).map((m) => {
+    const g = (t: string) => strip((new RegExp(`<${t}[^>]*>([\\s\\S]*?)</${t}>`).exec(m[1])?.[1] ?? "").replace(/<!\[CDATA\[|\]\]>/g, ""));
+    return `- ${g("title")} (${g("source")}, ${g("pubDate")})\n  ${g("link")}`;
+  });
+  return items.join("\n") || "No fresh news found. Try web_search.";
+}
+
+/** Read-only tools that may run at the same time when the model asks for several at once. */
+const PARALLEL_SAFE = new Set(["web_search", "news_search", "read_url", "grep_code", "code_outline", "search_stock_media", "find_integration_tools", "list_connected_accounts"]);
+/** Discovery tools whose identical calls are answered from this task's cache. */
+const CACHEABLE = new Set(["find_integration_tools", "list_connected_accounts", "code_outline"]);
 
 /** Rewrites the request's model for a provider that names models differently. */
 function withModel(body: string, model: string): string {
@@ -208,6 +235,14 @@ export async function runAgentLoop(
   const computer = createComputer();
   const browser = opts.usageOwner && opts.botId ? createBotBrowser(opts.usageOwner, opts.botId, computer) : null;
   const extras = [...(opts.extras || []), ...(opts.extra ? [opts.extra] : [])];
+  const toolCache = new Map<string, Promise<string>>();
+  const execOne = (name: string, args: any): Promise<string> => {
+    const run = () => { const extra = extras.find((e) => e.name === name); return extra ? extra.run(args) : runTool(name, args, computer); };
+    if (!CACHEABLE.has(name)) return run();
+    const k = name + JSON.stringify(args ?? {});
+    if (!toolCache.has(k)) { const p = run(); toolCache.set(k, p); p.catch(() => toolCache.delete(k)); }
+    return toolCache.get(k)!;
+  };
   const addComputerTool = (name: string, description: string, properties: object, required: string[], run: (args: any) => Promise<string>) => extras.push({ name, def: { type: "function", function: { name, description, parameters: { type: "object", properties, required } } }, run });
   addComputerTool("prepare_media", "Install ffmpeg on the isolated computer for editing video/audio. Use run_code afterwards; export finished files before the task ends.", {}, [], async () => { const result = await computer.prepareMedia(); if (!result.ok) throw new Error(result.output); return result.output; });
   addComputerTool("search_stock_media", "Search real cinematic footage and photos across Pexels, Pixabay (when keys exist), Wikimedia Commons, Openverse, NASA and Internet Archive (public-domain films) in parallel. Returns direct file URLs with size, duration, preview, author and license. Use several specific visual queries (subject + shot type + mood, e.g. 'aerial city night drone', 'slow motion coffee pour'). Include attribution in your final reply; never invent results.", { query: { type: "string" }, kind: { type: "string", enum: ["image", "video"] }, source: { type: "string", enum: [...STOCK_SOURCES] }, orientation: { type: "string", enum: ["any", "vertical", "horizontal", "square"] }, limit: { type: "integer" } }, ["query"], (args) => searchStockMedia(args, getProviderKey));
@@ -220,6 +255,7 @@ export async function runAgentLoop(
     const owner = opts.usageOwner;
     addComputerTool("create_video_montage", "Professional model-free editor: render and privately deliver an MP4 from real images/video. Per scene: trim_start, duration, speed, motion (zoom_in/zoom_out/pan_left/pan_right/pan_up/ken_burns for stills). Global: transition (cut/fade/dissolve/slide/wipe/zoom/whip/circle/blur), cinematic grade (cinematic/teal_orange/noir/golden/cool/vivid/vintage/moody) for a consistent look across sources, letterbox, grain, vignette, aspect 9:16/16:9/1:1/4:5/21:9, caption_style glass (iOS frosted card)/bold/minimal/karaoke with accent colour, timed Arabic/English captions with top/center/bottom position, supplied narration/music with ducking, fades and loudness normalisation. Up to 120 s. Cut on beats from analyze_media. Auto-exports; no export_file needed.", montageToolProperties, ["scenes"], (args) => createVideoMontage(computer, args, (input) => exportArtifact(computer, owner, input)));
     addComputerTool("create_voiceover", "Professional voiceover from a speech model (Cartesia Sonic): any language the user asks for (ar, en, fr, es, de, tr, ...), masculine/feminine voice, optional accent hint (e.g. khaleeji, modern-standard-arabic, british), speed 0.6-1.5 and emotion. Returns a /home/user/ WAV path, its exact duration, voice_id and measured word-timed captions. Write natural spoken copy in the language and dialect requested; reuse voice_id for every line of one video.", { text: { type: "string" }, language: { type: "string", description: "ISO 639-1 code, e.g. ar, en" }, gender: { type: "string", enum: ["masculine", "feminine", "any"] }, accent: { type: "string" }, voice_id: { type: "string" }, speed: { type: "number" }, emotion: { type: "string", enum: ["neutral", "calm", "excited", "content", "confident", "sad", "angry"] }, name: { type: "string", description: "file name ending .wav" } }, ["text", "language"], async (args) => createVoiceover(computer, args, await getProviderKey("cartesia")));
+    addComputerTool("create_full_video", "FASTEST way to make a promo/explainer video in ONE call: give the spoken script and the motion scenes; it records a professional voiceover, times scenes and captions to it, renders the liquid-glass video with ducked music and delivers it. Prefer this over separate create_voiceover + create_motion_video.", { script: { type: "string", description: "Full narration in the user's language/dialect" }, language: { type: "string" }, gender: { type: "string", enum: ["masculine", "feminine", "any"] }, accent: { type: "string" }, emotion: { type: "string", enum: ["neutral", "calm", "excited", "content", "confident"] }, ...(motionToolProperties as any) }, ["script", "language", "scenes"], async (args) => createFullVideo(computer, args, await getProviderKey("cartesia"), (input) => exportArtifact(computer, owner, input)));
     addComputerTool("create_motion_video", "Ceyo's signature liquid-glass motion graphics (Apple-style): drifting colour glows on a dark canvas, spring-animated logo ring, word-by-word titles, floating frosted-glass feature cards with tags, a chat scene that types a prompt and shows a bot reply, glass-framed screenshots and a glowing CTA button. Arabic RTL and English. Best for product promos, app explainers and launch videos. Narration from create_voiceover, glass captions, built-in ambient music or a supplied track with ducking. Up to 60 s. Auto-exports.", motionToolProperties, ["scenes"], (args) => createMotionVideo(computer, args, (input) => exportArtifact(computer, owner, input)));
     addComputerTool("export_file", "Save a produced computer file privately and display a downloadable chat card. File must be under /home/user/ and at most 20 MB. Export before the task ends; sandbox files are temporary.", { path: { type: "string" }, name: { type: "string" }, mime: { type: "string" } }, ["path", "name", "mime"], (args) => exportArtifact(computer, owner, args));
   }
@@ -369,6 +405,11 @@ export async function runAgentLoop(
       tool_calls: real.map((c) => ({ id: c.id, type: "function", function: { name: c.name, arguments: c.args || "{}" } })),
     });
     let redirected = false;
+    // Several read-only lookups in one step run together instead of one after another.
+    const prefetched = new Map<string, Promise<string>>();
+    if (real.length > 1 && real.every((c) => PARALLEL_SAFE.has(c.name))) {
+      for (const c of real) { let a: any = {}; try { a = JSON.parse(c.args || "{}"); } catch { /* empty */ } const p = execOne(c.name, a); p.catch(() => {}); prefetched.set(c.id, p); }
+    }
     for (let index = 0; index < real.length; index++) {
       const c = real[index];
       signal.throwIfAborted();
@@ -389,7 +430,7 @@ export async function runAgentLoop(
       emit({ id: `${c.id}-call`, type: "agent.tool_use", part: { type: "tool_call", call_id: c.id, tool_name: c.name, args } });
       let result: string;
       let status = "ok";
-      try { const extra = extras.find((extra) => extra.name === c.name); result = extra ? await extra.run(args) : await runTool(c.name, args, computer); } catch (e) { result = e instanceof Error ? e.message : "Tool failed"; status = "error"; }
+      try { result = await (prefetched.get(c.id) ?? execOne(c.name, args)); } catch (e) { result = e instanceof Error ? e.message : "Tool failed"; status = "error"; }
       emit({ id: `${c.id}-res`, type: "agent.tool_result", part: { type: "tool_result", call_id: c.id, tool_name: c.name, status, result: result.slice(0, 30000) } });
       const check = failures.record(c.name, args, status === "ok");
       const blocked = status === "ok" ? blockedPageNote(result) : null;

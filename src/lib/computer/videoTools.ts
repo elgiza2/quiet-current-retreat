@@ -45,3 +45,17 @@ export async function createMotionVideo(computer: Computer, raw: unknown, save: 
   const artifact = JSON.parse(await save({ path: metadata.path, name: input.name, mime: "video/mp4" }));
   return JSON.stringify({ ...artifact, duration: metadata.duration, width: metadata.width, height: metadata.height, narration: metadata.narration, music: metadata.music, instruction: `Video saved privately; the chat displays its file card. ${metadata.narration ? "Voiceover mixed with ducked music." : "No voiceover."}` });
 }
+
+/** One-call promo: narration first, then motion scenes timed to it, rendered and delivered together. */
+export async function createFullVideo(computer: Computer, raw: any, key: string | null, save: (input: { path: string; name: string; mime: string }) => Promise<string>) {
+  const { script, language, gender, accent, speed, emotion, scenes, name, ...rest } = raw ?? {};
+  if (!script || !Array.isArray(scenes) || !scenes.length) throw new Error("Write the spoken script and the scenes, then call again.");
+  const voice = JSON.parse(await createVoiceover(computer, { text: script, language: language || "en", gender, accent, speed, emotion, name: "full_voice.wav" }, key));
+  const offset = 0.3;
+  const need = voice.duration + offset + 1;
+  const total = scenes.reduce((t: number, s: any) => t + (Number(s.duration) || 3), 0);
+  const scale = total < need ? need / total : 1;
+  const timed = scenes.map((s: any) => ({ ...s, duration: Math.round((Number(s.duration) || 3) * scale * 10) / 10 }));
+  const captions = (voice.captions as { text: string; start: number; end: number }[]).map((c) => ({ ...c, start: c.start + offset, end: c.end + offset }));
+  return createMotionVideo(computer, { ...rest, scenes: timed, captions, narration: voice.path, narration_offset: offset, name: name || "video.mp4" }, save);
+}
