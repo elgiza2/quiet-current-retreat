@@ -15,6 +15,7 @@ type Sandbox = { id: string; token?: string; domain: string; key: string };
 export type Computer = {
   run: (code: string, language?: ComputerLanguage, timeoutMs?: number) => Promise<{ ok: boolean; output: string }>;
   readFile: (path: string) => Promise<Uint8Array>;
+  writeFile: (path: string, bytes: Uint8Array, mime?: string) => Promise<void>;
   prepareMedia: () => Promise<{ ok: boolean; output: string }>;
   close: () => Promise<void>;
 };
@@ -81,6 +82,23 @@ export function createComputer(): Computer {
       const bytes = new Uint8Array(size); let offset = 0;
       for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength; }
       return bytes;
+    },
+    async writeFile(path, bytes, mime = "application/octet-stream") {
+      if (!path.startsWith("/home/user/") || path.split("/").includes("..")) throw new Error("Write files only under /home/user/");
+      if (bytes.byteLength > 31457280) throw new Error("File exceeds 30 MB");
+      const key = await getProviderKey("e2b");
+      if (!key) throw new Error("The cloud computer is unavailable: no E2B key is configured.");
+      box ??= openSandbox(key);
+      const sb = await box;
+      // Hand-built multipart body: identical bytes on workerd and Node, no runtime FormData differences.
+      const boundary = `ceyo${crypto.randomUUID().replace(/-/g, "")}`;
+      const name = (path.split("/").pop() || "file").replace(/["\r\n]/g, "");
+      const head = new TextEncoder().encode(`--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="${name}"\r\nContent-Type: ${mime}\r\n\r\n`);
+      const tail = new TextEncoder().encode(`\r\n--${boundary}--\r\n`);
+      const body = new Uint8Array(head.byteLength + bytes.byteLength + tail.byteLength);
+      body.set(head); body.set(bytes, head.byteLength); body.set(tail, head.byteLength + bytes.byteLength);
+      const res = await fetch(`https://49983-${sb.id}.${sb.domain}/files?path=${encodeURIComponent(path)}`, { method: "POST", body, headers: { "Content-Type": `multipart/form-data; boundary=${boundary}`, ...(sb.token ? { "X-Access-Token": sb.token } : {}) }, signal: AbortSignal.timeout(60000) });
+      if (!res.ok) throw new Error(`The cloud computer refused the file (${res.status}).`);
     },
     async close() {
       const pending = box;
