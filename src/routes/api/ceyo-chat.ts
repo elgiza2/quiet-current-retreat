@@ -54,6 +54,9 @@ export const Route = createFileRoute("/api/ceyo-chat")({ server: { handlers: {
         try { controller.enqueue(encoder.encode(`data: ${JSON.stringify(e)}\n\n`)); } catch { /* closed */ }
       };
       onSteer = emit;
+      // Keep-alive: long tool runs send no bytes, and idle connections get cut by proxies/mobile browsers.
+      const beat = setInterval(() => { try { controller.enqueue(encoder.encode(": ping\n\n")); } catch { clearInterval(beat); } }, 15000);
+      request.signal.addEventListener("abort", () => clearInterval(beat));
       emit({ id: `${rid}-run`, type: "session.status_running" });
       try {
         const tools = workspaceTools({ db, userId, botId: conv.bot_id, conversationId: conv.id, primary, emit, signal: request.signal, poll, origin: new URL(request.url).origin });
@@ -94,6 +97,7 @@ export const Route = createFileRoute("/api/ceyo-chat")({ server: { handlers: {
         if (!request.signal.aborted) emit({ id: `${rid}-error`, type: "session.error", message: error instanceof Error ? (/^(fetch failed|network|terminated)/i.test(error.message) ? "The connection dropped, send it again in a moment." : error.message) : "Could not finish" });
       }
       emit({ id: `${rid}-idle`, type: "session.status_idle", stop_reason: { type: request.signal.aborted ? "interrupted" : failed ? "error" : "end_turn" } });
+      clearInterval(beat);
       try { controller.close(); } catch { /* closed */ }
     } });
     return new Response(stream, { headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-store" } });

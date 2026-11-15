@@ -236,6 +236,7 @@ export async function runAgentLoop(
   const usageRun = crypto.randomUUID();
 
   try {
+  let streamRetries = 0;
   for (let step = 0; step < maxSteps; step++) {
     signal.throwIfAborted();
     // Refresh after user steering; append after specialization and saved context.
@@ -260,10 +261,11 @@ export async function runAgentLoop(
     const calls: { id: string; name: string; args: string }[] = [];
     const sid = `${turn}-${step}`;
     let n = 0;
+    let dropped = false;
     for (;;) {
       let chunk: ReadableStreamReadResult<Uint8Array>;
       // A dropped stream surfaces as a raw "fetch failed"; give the user a clear, actionable message instead.
-      try { chunk = await reader.read(); } catch (error) { if (signal.aborted) throw error; throw new Error("The connection dropped, send it again in a moment."); }
+      try { chunk = await reader.read(); } catch (error) { if (signal.aborted) throw error; dropped = true; break; }
       const { value, done } = chunk;
       if (done) break;
       buf += dec.decode(value, { stream: true });
@@ -290,6 +292,13 @@ export async function runAgentLoop(
           if (tc.function?.arguments) calls[k].args += tc.function.arguments;
         }
       }
+    }
+    // The model stream dropped mid-step: nothing from this step was shown yet, so redo it (at most twice) instead of failing the reply.
+    if (dropped) {
+      if (streamRetries++ >= 2) throw new Error("The connection dropped, send it again in a moment.");
+      await new Promise((r) => setTimeout(r, 1000 * streamRetries));
+      step--;
+      continue;
     }
     // Qwen sends whitespace-only content alongside tool calls; drop it so answers have no blank gaps.
     text = text.trim();
