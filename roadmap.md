@@ -585,3 +585,8 @@
 - [x] Pixabay key added (Pexels unavailable for this account)
 - [ ] Live chat run on a real E2B computer with a signed-in account
 - [x] Automatic speech-to-word timing for karaoke captions (transcribe_words)
+
+## Coding + design skills — 2026-11-15
+- [x] Senior-engineer explore → edit → run → fix loop in bot instructions
+- [x] Friendly completion note; files/ZIP only on explicit request
+- [x] Premium motion-first design rules, no design-source mentions to users
