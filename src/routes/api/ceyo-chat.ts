@@ -85,7 +85,7 @@ export const Route = createFileRoute("/api/ceyo-chat")({ server: { handlers: {
           }
           text = blocks.join("\n\n");
         } else {
-          text = await runAgentLoop(system, history, emit, request.signal, poll, { usageOwner: userId, botId: conv.bot_id, chatModel: true, extras: tools, maxSteps: 20 });
+          text = await runAgentLoop(system, history, emit, request.signal, poll, { usageOwner: userId, botId: conv.bot_id, chatModel: true, extras: tools, maxSteps: 30 });
         }
         if (!text.trim() && !events.some((e) => e.type === "agent.tool_result" && ["ask_user", "connect_app", "request_integration_action"].includes(String(e.part && typeof e.part === "object" ? (e.part as Record<string, unknown>).tool_name : "")))) throw new Error("No answer was completed. Please try again.");
         const { error } = await db.from("messages").insert({ id: rid, conversation_id: conv.id, user_id: userId, bot_id: conv.bot_id, role: "assistant", content: text.trim(), metadata: { events: events.filter((e) => e.type.startsWith("agent.tool")), transcript: events } as never });
@@ -93,8 +93,8 @@ export const Route = createFileRoute("/api/ceyo-chat")({ server: { handlers: {
         await db.from("conversations").update({ updated_at: new Date().toISOString() }).eq("id", conv.id);
       } catch (error) {
         failed = true;
-        if (events.some(e => e.type === "agent.message" || e.type === "agent.tool_result")) await db.from("messages").insert({ id: rid, conversation_id: conv.id, user_id: userId, bot_id: conv.bot_id, role: "assistant", content: "Task interrupted before completion.", metadata: { incomplete: true, transcript: [...events, { id: `${rid}-incomplete`, type: "agent.message", parts: [{ type: "text", text: "Task interrupted before completion. Ask to continue from the saved results.", stream_id: `${rid}-incomplete` }] }] } as never });
-        if (!request.signal.aborted) emit({ id: `${rid}-error`, type: "session.error", message: error instanceof Error ? (/^(fetch failed|network|terminated)/i.test(error.message) ? "The connection dropped, send it again in a moment." : error.message) : "Could not finish" });
+        if (events.some(e => e.type === "agent.message" || e.type === "agent.tool_result")) await db.from("messages").insert({ id: rid, conversation_id: conv.id, user_id: userId, bot_id: conv.bot_id, role: "assistant", content: "الشغل وقف قبل ما يخلص.", metadata: { incomplete: true, transcript: [...events, { id: `${rid}-incomplete`, type: "agent.message", parts: [{ type: "text", text: "الشغل وقف قبل ما يخلص، بس اللي اتعمل متسجل. قولي «كمل» وأكمل من مكان ما وقفت.", stream_id: `${rid}-incomplete` }] }] } as never });
+        if (!request.signal.aborted) emit({ id: `${rid}-error`, type: "session.error", message: error instanceof Error ? (/^(fetch failed|network|terminated)/i.test(error.message) ? "النت فصل شوية، ابعت تاني كمان لحظة وهكمل معاك." : /[a-z]{4}/i.test(error.message) ? "حصلت مشكلة صغيرة ومقدرتش أكمل، جرب تبعت تاني." : error.message) : "مقدرتش أكمل، جرب تبعت تاني." });
       }
       emit({ id: `${rid}-idle`, type: "session.status_idle", stop_reason: { type: request.signal.aborted ? "interrupted" : failed ? "error" : "end_turn" } });
       clearInterval(beat);

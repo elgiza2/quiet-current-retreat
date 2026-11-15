@@ -103,7 +103,7 @@ async function startReply(sessionId: string) {
       await readEventStream(res.body, (e) => { push(e); });
     } catch (e: any) {
       if (live.ctl.signal.aborted) push({ id: crypto.randomUUID(), type: "session.status_idle", stop_reason: { type: "interrupted" } });
-      else push({ id: crypto.randomUUID(), type: "session.error", message: /^(fetch failed|failed to fetch|network|load failed)/i.test(String(e?.message)) ? "The connection dropped, send it again in a moment." : e?.message } as RawEvent);
+      else push({ id: crypto.randomUUID(), type: "session.error", message: /^(fetch failed|failed to fetch|network|load failed)/i.test(String(e?.message)) ? "النت فصل شوية، ابعت تاني كمان لحظة وهكمل معاك." : "حصلت مشكلة صغيرة، جرب تبعت تاني." } as RawEvent);
     } finally {
       if (running.get(sessionId) === live) running.delete(sessionId);
     }

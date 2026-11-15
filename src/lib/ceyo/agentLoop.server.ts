@@ -155,7 +155,7 @@ export async function cerebrasRequest(keys: (string | CerebrasKey)[], body: stri
       if (signal.aborted) throw error;
       if (coarena && modelCursor + 1 < models.length) { modelCursor++; continue; }
       if (keyCursor + 1 < keys.length) { keyCursor++; modelCursor = 0; continue; }
-      if (attempt >= 4) throw new Error("The connection dropped, send it again in a moment.");
+      if (attempt >= 4) throw new Error("النت فصل شوية، ابعت تاني كمان لحظة وهكمل معاك.");
       await new Promise((r) => setTimeout(r, 1500 * (attempt + 1)));
       keyCursor = 0; modelCursor = 0;
       continue;
@@ -317,7 +317,7 @@ export async function runAgentLoop(
     }
     // The model stream dropped mid-step: nothing from this step was shown yet, so redo it (at most twice) instead of failing the reply.
     if (dropped) {
-      if (streamRetries++ >= 2) throw new Error("The connection dropped, send it again in a moment.");
+      if (streamRetries++ >= 2) throw new Error("النت فصل شوية، ابعت تاني كمان لحظة وهكمل معاك.");
       await new Promise((r) => setTimeout(r, 1000 * streamRetries));
       step--;
       continue;
@@ -400,11 +400,11 @@ export async function runAgentLoop(
         emit({ id: `${c.id}-handoff`, type: "agent.message", parts: [{ type: "text", text: handoff }] });
         return `${answer}${answer ? "\n\n" : ""}${handoff}`;
       }
-      if (status === "ok" && (c.name === "ask_user" || c.name === "connect_app" || c.name === "request_integration_action")) return answer;
+      if (status === "ok" && (c.name === "ask_user" || c.name === "connect_app" || (c.name === "request_integration_action" && !/"executed":true/.test(result)))) return answer;
     }
     if (redirected) continue;
   }
-  throw new Error("The task reached its step limit before completing. Saved tool results remain available; ask to continue.");
+  throw new Error("الشغلانة طلعت أكبر من اللفة دي، اللي عملته متسجل، قولي «كمل» وأكمل من مكان ما وقفت.");
   } finally {
     try { await browser?.close(); } finally { await computer.close(); }
   }
