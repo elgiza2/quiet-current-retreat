@@ -87,3 +87,16 @@ describe("cinematic editing options", () => {
     expect(JSON.parse(await searchStockMedia({ query: "city", kind: "image", source: "openverse" })).results).toEqual([]);
   });
 });
+
+import { groupWords } from "./wordTiming";
+describe("measured word timing", () => {
+  it("groups words into karaoke captions that pass montage validation", () => {
+    const caps = groupWords([{ word: "اهلا", start: 0.1, end: 0.5 }, { word: "بيك", punctuated_word: "بيك.", start: 0.6, end: 0.9 }, { word: "في", start: 2, end: 2.2 }, { word: "Ceyo", start: 2.3, end: 2.8 }], 5);
+    expect(caps.map((c) => c.text)).toEqual(["اهلا بيك.", "في Ceyo"]);
+    expect(montageInput.safeParse({ scenes: [{ ...scene, duration: 3 }], caption_style: "karaoke", captions: caps }).success).toBe(true);
+  });
+  it("caps words per caption", () => {
+    const words = Array.from({ length: 7 }, (_, i) => ({ word: `w${i}`, start: i * 0.3, end: i * 0.3 + 0.2 }));
+    expect(groupWords(words, 3).map((c) => c.words.length)).toEqual([3, 3, 1]);
+  });
+});

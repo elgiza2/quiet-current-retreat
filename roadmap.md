@@ -576,6 +576,6 @@
 - [x] Colour grades, letterbox, grain, vignette, 9 transitions, ken-burns/pans, speed
 - [x] iOS-style glass, bold, minimal and karaoke captions (IBM Plex Sans Arabic)
 - [x] Block private-network asset downloads and redirects
-- [ ] Add Pexels/Pixabay keys (owner, via /add_pexels, /add_pixabay)
+- [x] Pixabay key added (Pexels unavailable for this account)
 - [ ] Live chat run on a real E2B computer with a signed-in account
-- [ ] Automatic speech-to-word timing for karaoke captions
+- [x] Automatic speech-to-word timing for karaoke captions (transcribe_words)
