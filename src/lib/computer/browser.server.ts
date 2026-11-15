@@ -76,7 +76,7 @@ export function createBotBrowser(userId: string, botId: string, computer: Comput
       if (input.action === "login") {
         const debug = await api(current.key, `/sessions/${current.id}/debug`);
         handoff = true;
-        return JSON.stringify({ type: "ceyo.browser_login", url: debug.debuggerFullscreenUrl, instruction: "Give this private, temporary browser link only to this user. They sign in themselves. Stop and wait; never ask for their password or bypass verification. Context is saved when session ends (up to 10 minutes)." });
+        return JSON.stringify({ type: "ceyo.widget", widget: "browser_handoff", handoff: "ceyo.browser_login", data: { url: debug.debuggerFullscreenUrl, site: input.url, reason: input.question }, url: debug.debuggerFullscreenUrl, instruction: "A live browser card with an I'm done button is shown to this user. They sign in or solve the check themselves. Stop and wait; never ask for their password or bypass verification. Context is saved when session ends (up to 10 minutes)." });
       }
       return result.output;
     },

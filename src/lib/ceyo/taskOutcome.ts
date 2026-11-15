@@ -4,6 +4,6 @@ export function needsBrowserLogin(events: readonly Record<string, unknown>[]): b
     if (event.type !== "agent.tool_result") return false;
     const part = event.part as { tool_name?: string; status?: string; result?: string } | undefined;
     if (part?.tool_name !== "browser" || part.status !== "ok" || !part.result) return false;
-    try { return JSON.parse(part.result).type === "ceyo.browser_login"; } catch { return false; }
+    try { const r = JSON.parse(part.result); return r.type === "ceyo.browser_login" || r.handoff === "ceyo.browser_login"; } catch { return false; }
   });
 }

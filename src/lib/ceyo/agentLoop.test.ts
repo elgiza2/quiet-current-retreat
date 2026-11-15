@@ -7,7 +7,7 @@ describe("steerable execution", () => {
     vi.stubEnv("CEREBRAS_API_KEY", "test-only");
     vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "");
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(reply({ content: "Starting", tool_calls: [{ index: 0, id: "c", function: { name: "test_tool", arguments: "{}" } }] })));
-    await expect(runAgentLoop("Partner", [], () => {}, new AbortController().signal, async () => [], { maxSteps: 1, extras: [{ name: "test_tool", def: {}, run: async () => "done" }] })).rejects.toThrow("قولي «كمل»");
+    await expect(runAgentLoop("Partner", [], () => {}, new AbortController().signal, async () => [], { maxSteps: 1, extras: [{ name: "test_tool", def: {}, run: async () => "done" }] })).rejects.toThrow("say \"continue\"");
   });
   it("rejects an empty final response even after successful tools", async () => {
     vi.stubEnv("CEREBRAS_API_KEY", "test-only");
