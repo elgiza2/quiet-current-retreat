@@ -412,6 +412,24 @@ export type Database = {
           },
         ]
       }
+      agent_trials: {
+        Row: {
+          ends_at: string
+          started_at: string
+          user_id: string
+        }
+        Insert: {
+          ends_at?: string
+          started_at?: string
+          user_id: string
+        }
+        Update: {
+          ends_at?: string
+          started_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       agent_usage_balances: {
         Row: {
           allowance_usd: number
@@ -1886,6 +1904,8 @@ export type Database = {
         Args: { p_bot_ids: string[]; p_name: string; p_usernames: string[] }
         Returns: string
       }
+      ensure_agent_trial: { Args: { p_user_id: string }; Returns: string }
+      ensure_my_agent_trial: { Args: never; Returns: string }
       finish_agent_job: {
         Args: {
           p_id: string
