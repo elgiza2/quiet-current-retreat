@@ -66,6 +66,8 @@ import { Route as ApiPublicChannelsXchatRouteImport } from './routes/api/public/
 import { Route as ApiPublicMediaStatusRunIdRouteImport } from './routes/api/public/media-status.$runId'
 import { Route as ApiPublicSiteSiteIdRouteImport } from './routes/api/public/site.$siteId'
 import { Route as ApiPublicTgBotDocIdRouteImport } from './routes/api/public/tg-bot.$docId'
+import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
+import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 import { Route as ApiPublicCeyoHookRoutineIdSigRouteImport } from './routes/api/public/ceyo-hook.$routineId.$sig'
 import { Route as ApiPublicMediaRunIdIndexRouteImport } from './routes/api/public/media.$runId.$index'
@@ -358,6 +360,16 @@ const ApiPublicTgBotDocIdRoute = ApiPublicTgBotDocIdRouteImport.update({
   path: '/api/public/tg-bot/$docId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LovableEmailAuthPreviewRoute = LovableEmailAuthPreviewRouteImport.update({
+  id: '/lovable/email/auth/preview',
+  path: '/lovable/email/auth/preview',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LovableEmailAuthWebhookRoute = LovableEmailAuthWebhookRouteImport.update({
+  id: '/lovable/email/auth/webhook',
+  path: '/lovable/email/auth/webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LovableEmailTransactionalPreviewRoute =
   LovableEmailTransactionalPreviewRouteImport.update({
     id: '/lovable/email/transactional/preview',
@@ -435,6 +447,8 @@ export interface FileRoutesByFullPath {
   '/api/public/media-status/$runId': typeof ApiPublicMediaStatusRunIdRoute
   '/api/public/site/$siteId': typeof ApiPublicSiteSiteIdRoute
   '/api/public/tg-bot/$docId': typeof ApiPublicTgBotDocIdRoute
+  '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
+  '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/api/public/ceyo-hook/$routineId/$sig': typeof ApiPublicCeyoHookRoutineIdSigRoute
   '/api/public/media/$runId/$index': typeof ApiPublicMediaRunIdIndexRoute
@@ -497,6 +511,8 @@ export interface FileRoutesByTo {
   '/api/public/media-status/$runId': typeof ApiPublicMediaStatusRunIdRoute
   '/api/public/site/$siteId': typeof ApiPublicSiteSiteIdRoute
   '/api/public/tg-bot/$docId': typeof ApiPublicTgBotDocIdRoute
+  '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
+  '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/api/public/ceyo-hook/$routineId/$sig': typeof ApiPublicCeyoHookRoutineIdSigRoute
   '/api/public/media/$runId/$index': typeof ApiPublicMediaRunIdIndexRoute
@@ -560,6 +576,8 @@ export interface FileRoutesById {
   '/api/public/media-status/$runId': typeof ApiPublicMediaStatusRunIdRoute
   '/api/public/site/$siteId': typeof ApiPublicSiteSiteIdRoute
   '/api/public/tg-bot/$docId': typeof ApiPublicTgBotDocIdRoute
+  '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
+  '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/api/public/ceyo-hook/$routineId/$sig': typeof ApiPublicCeyoHookRoutineIdSigRoute
   '/api/public/media/$runId/$index': typeof ApiPublicMediaRunIdIndexRoute
@@ -624,6 +642,8 @@ export interface FileRouteTypes {
     | '/api/public/media-status/$runId'
     | '/api/public/site/$siteId'
     | '/api/public/tg-bot/$docId'
+    | '/lovable/email/auth/preview'
+    | '/lovable/email/auth/webhook'
     | '/lovable/email/transactional/preview'
     | '/api/public/ceyo-hook/$routineId/$sig'
     | '/api/public/media/$runId/$index'
@@ -686,6 +706,8 @@ export interface FileRouteTypes {
     | '/api/public/media-status/$runId'
     | '/api/public/site/$siteId'
     | '/api/public/tg-bot/$docId'
+    | '/lovable/email/auth/preview'
+    | '/lovable/email/auth/webhook'
     | '/lovable/email/transactional/preview'
     | '/api/public/ceyo-hook/$routineId/$sig'
     | '/api/public/media/$runId/$index'
@@ -748,6 +770,8 @@ export interface FileRouteTypes {
     | '/api/public/media-status/$runId'
     | '/api/public/site/$siteId'
     | '/api/public/tg-bot/$docId'
+    | '/lovable/email/auth/preview'
+    | '/lovable/email/auth/webhook'
     | '/lovable/email/transactional/preview'
     | '/api/public/ceyo-hook/$routineId/$sig'
     | '/api/public/media/$runId/$index'
@@ -811,6 +835,8 @@ export interface RootRouteChildren {
   ApiPublicMediaStatusRunIdRoute: typeof ApiPublicMediaStatusRunIdRoute
   ApiPublicSiteSiteIdRoute: typeof ApiPublicSiteSiteIdRoute
   ApiPublicTgBotDocIdRoute: typeof ApiPublicTgBotDocIdRoute
+  LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
+  LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
   LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
   ApiPublicCeyoHookRoutineIdSigRoute: typeof ApiPublicCeyoHookRoutineIdSigRoute
   ApiPublicMediaRunIdIndexRoute: typeof ApiPublicMediaRunIdIndexRoute
@@ -1217,6 +1243,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicTgBotDocIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/lovable/email/auth/preview': {
+      id: '/lovable/email/auth/preview'
+      path: '/lovable/email/auth/preview'
+      fullPath: '/lovable/email/auth/preview'
+      preLoaderRoute: typeof LovableEmailAuthPreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lovable/email/auth/webhook': {
+      id: '/lovable/email/auth/webhook'
+      path: '/lovable/email/auth/webhook'
+      fullPath: '/lovable/email/auth/webhook'
+      preLoaderRoute: typeof LovableEmailAuthWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/lovable/email/transactional/preview': {
       id: '/lovable/email/transactional/preview'
       path: '/lovable/email/transactional/preview'
@@ -1299,6 +1339,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicMediaStatusRunIdRoute: ApiPublicMediaStatusRunIdRoute,
   ApiPublicSiteSiteIdRoute: ApiPublicSiteSiteIdRoute,
   ApiPublicTgBotDocIdRoute: ApiPublicTgBotDocIdRoute,
+  LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
+  LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
   LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
   ApiPublicCeyoHookRoutineIdSigRoute: ApiPublicCeyoHookRoutineIdSigRoute,
   ApiPublicMediaRunIdIndexRoute: ApiPublicMediaRunIdIndexRoute,

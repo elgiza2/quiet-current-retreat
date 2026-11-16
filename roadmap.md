@@ -1,3 +1,10 @@
+## Emails, 3-day trial and Android Google sign-in — 2026-11-16
+- [ ] Branded sign-in/sign-up/password/email-change emails from notify.ceyo.si
+- [ ] Welcome email in the landing page look; welcome + task-ready emails send automatically
+- [ ] Send every email design to elgizaoffical@gmail.com for review
+- [ ] 3-day free trial for every new user, enforced on the server
+- [ ] Android app opens Google sign-in directly, no extra tap
+
 ## Phone performance, copy policy and desktop workspace — 2026-11-16
 - [x] Scope copy/selection restrictions to app.ceyo.si on phones, preserving editable fields and unrestricted web/desktop use.
 - [x] Reduce phone painting and unnecessary source-link requests without weakening authorization.
