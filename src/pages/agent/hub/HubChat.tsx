@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { FormattedAnswer } from "@/components/chat/FormattedAnswer";
+import { appCopyRestricted } from "@/lib/appInteractionPolicy";
 import { ChatLink } from "@/components/chat/ChatLink";
 import { PinnedMessages } from "@/components/chat/PinnedMessages";
 import {
@@ -515,6 +516,7 @@ export function HubChat({
     setSheet(null);
   };
   const copy = async (text: string, label: string) => {
+    if (appCopyRestricted()) { setSheet(null); return; }
     try { await navigator.clipboard.writeText(text); setToast({ title: label }); } catch { setToast({ title: ar ? "النسخ مش متاح" : "Copy unavailable", tone: "error" }); }
     setSheet(null);
   };
@@ -720,11 +722,11 @@ export function HubChat({
               <button type="button" onClick={() => { setReplyTo(sheet.text); setSheet(null); }}><Reply size={20} />{ar ? "رد" : "Reply"}</button>
               <button type="button" onClick={() => { onMarkUnread?.(); setSheet(null); setToast({ title: ar ? "اتعلمت غير مقروءة" : "Marked as unread" }); }}><MessageSquareDot size={20} />{ar ? "علّمها غير مقروءة" : "Mark as unread"}</button>
             </div>
-            <div className="cx-sheet-group">
+            {!appCopyRestricted() && <div className="cx-sheet-group">
               <button type="button" onClick={() => void copy(sheet.text, ar ? "اتنسخت" : "Copied")}><Copy size={20} />{ar ? "نسخ" : "Copy"}</button>
               <button type="button" onClick={() => { setSelectable(sheet.key); setSheet(null); }}><TextCursor size={20} />{ar ? "تحديد النص" : "Select Text"}</button>
               <button type="button" onClick={() => void copy(sheet.turnId, ar ? "اتنسخ رقم الطلب" : "Request ID copied")}><Copy size={20} />{ar ? "نسخ رقم الطلب" : "Copy Request ID"}</button>
-            </div>
+            </div>}
             <div className="cx-sheet-group">
               <button type="button" onClick={() => { setSheet(null); setToast({ title: ar ? "شكرًا، وصلنا البلاغ" : "Thanks, report received" }); }}><Flag size={20} />{ar ? "إبلاغ" : "Report"}</button>
             </div>

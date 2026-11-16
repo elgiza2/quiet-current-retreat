@@ -47,6 +47,7 @@ const __firstVisitWelcome = (() => {
 })();
 
 import { installTapReliability } from "@/lib/tapReliability";
+import { installAppInteractionPolicy } from "@/lib/appInteractionPolicy";
 // All render-critical CSS now loads from src/styles/app.css, imported by
 // src/routes/__root.tsx so the stylesheet ships with the HTML instead of
 // arriving with this dynamic chunk (which made pages paint unstyled).
@@ -187,14 +188,9 @@ runIdle(() => {
   if (t.message) t.message = wrap(t.message.bind(t));
 })();
 
-// Prevent right-click context menu
-// Prevent right-click context menu, except inside editable fields so users can copy/paste normally
-document.addEventListener("contextmenu", (e) => {
-  const t = e.target as HTMLElement | null;
-  if (t && t.closest('input, textarea, select, [contenteditable=""], [contenteditable="true"]'))
-    return;
-  e.preventDefault();
-});
+// Only the app.ceyo.si phone surface disables copying outside editable fields.
+const removeInteractionPolicy = installAppInteractionPolicy();
+if (import.meta.hot) import.meta.hot.dispose(removeInteractionPolicy);
 
 // Report any unhandled error or promise rejection to the admin (best-effort).
 let __lastReport = 0;

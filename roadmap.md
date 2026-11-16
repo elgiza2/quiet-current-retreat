@@ -1,3 +1,10 @@
+## Phone performance, copy policy and desktop workspace — 2026-11-16
+- [x] Scope copy/selection restrictions to app.ceyo.si on phones, preserving editable fields and unrestricted web/desktop use.
+- [x] Reduce phone painting and unnecessary source-link requests without weakening authorization.
+- [x] Add a dedicated desktop navigation/workspace using existing account, chats, integrations, wallet and settings.
+- [x] Verify 377 regressions and public/demo desktop/phone presentation; document limits.
+- [ ] Signed-in desktop/phone navigation with real data — external_unmanaged has no restorable session; device performance and native desktop installer not verified/provided.
+
 ## Chat equations, sources and pins — 2026-11-16
 - [x] Render inline/block LaTeX without changing code blocks.
 - [x] Show safe web links as compact favicon capsules with readable titles.

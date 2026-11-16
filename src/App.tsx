@@ -25,6 +25,7 @@ import {
   InternalLinkInterceptor,
 } from "@/routes-app/routeHelpers";
 import { AppRoutes } from "@/routes-app/AppRoutes";
+import { DesktopAppShell } from "@/components/workspace/DesktopAppShell";
 import { applyTheme } from "@/lib/theme";
 import { lazyWithRetry } from "@/lib/lazyWithRetry";
 import { loadTikTokPixel, trackTikTokFunnelEvent } from "@/lib/analytics/tiktokPixel";
@@ -190,11 +191,13 @@ const App = () => {
 
                     <Suspense fallback={<LazyFallback />}>
                       <RouteErrorBoundary>
+                        <DesktopAppShell signedIn={Boolean(currentUserId)}>
                         <SettingsShell>
                           <DeferredRoutes>
                             {AppRoutes({ currentUserId })}
                           </DeferredRoutes>
                         </SettingsShell>
+                        </DesktopAppShell>
                       </RouteErrorBoundary>
                     </Suspense>
                     </DynamicNotifications>
