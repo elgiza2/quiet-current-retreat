@@ -1,16 +1,18 @@
 import { EXHAUSTED_MESSAGE } from "./usage";
 import type { SupabaseClient } from "@supabase/supabase-js";
-export type UsageStatus = { isPaid: boolean; remainingUsd: number; stepUsd: number };
+export type UsageStatus = { isPaid: boolean; hasAccess: boolean; trialActive: boolean; remainingUsd: number; stepUsd: number };
 /** Owner-scoped read used by usage gates and entitlement-specific features. */
 export async function getUsageStatus(db: SupabaseClient): Promise<UsageStatus> {
   const { data, error } = await db.rpc("agent_usage_status");
   if (error || !data || typeof data.isPaid !== "boolean" || typeof data.remainingUsd !== "number" || typeof data.stepUsd !== "number") throw new Error("Could not check usage. Please try again later.");
-  return { isPaid: data.isPaid, remainingUsd: data.remainingUsd, stepUsd: data.stepUsd };
+  const trialActive = data.trialActive === true;
+  // Access = active paid plan or the one-time 3-day trial; decided by the database, never the browser.
+  return { isPaid: data.isPaid, hasAccess: data.isPaid || (data.hasAccess === true && trialActive), trialActive, remainingUsd: data.remainingUsd, stepUsd: data.stepUsd };
 }
 /** Owner-scoped read, also used before issuing provider access tokens. */
 export async function checkUsageAvailable(db: SupabaseClient): Promise<void> {
   const data = await getUsageStatus(db);
-  if (!data.isPaid) throw new Error(EXHAUSTED_MESSAGE);
+  if (!data.hasAccess) throw new Error(EXHAUSTED_MESSAGE);
 }
 export function usageFailure(error: unknown): Response {
   const message = error instanceof Error ? error.message : "Could not check usage. Please try again later.";

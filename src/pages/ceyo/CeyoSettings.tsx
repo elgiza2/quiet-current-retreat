@@ -157,7 +157,7 @@ function Main({ nav }: { nav: Nav }) {
     <Shell title="Settings" back={() => nav("/")}>
       <Group>
         <MeCard onClick={() => nav("/settings/account")} />
-        <Row label="Usage" value={usage.isPending ? "…" : usage.isError ? "Unavailable" : usage.data?.isPaid ? "Subscribed" : `${usage.percent}%`} onClick={() => nav("/settings/usage")} />
+        <Row label="Usage" value={usage.isPending ? "…" : usage.isError ? "Unavailable" : usage.data?.isPaid ? "Subscribed" : usage.data?.trialActive ? `Free trial · ${usage.trialDays}d left` : "Trial ended"} onClick={() => nav("/settings/usage")} />
         <Row label="Manage Subscription" onClick={() => nav("/settings/subscription")} />
         <Row label="Storage" sub="Files, memories and cache" onClick={() => nav("/settings/storage")} />
         <Row label="Vault" sub="Saved labels and contact info on this device" onClick={() => nav("/settings/vault")} />
@@ -234,15 +234,15 @@ function Usage({ nav }: { nav: Nav }) {
       {usage.isError && <Group><Row label="Could not load usage" onClick={() => void usage.refetch()} sub="Try again" /></Group>}
       <div className="ceyo-usage-panel">
         <div className="ceyo-usage-body">
-          <div className="ceyo-usage-head"><strong>{usage.data?.isPaid ? "Subscription" : "Free usage"}</strong><span>{usage.data?.isPaid ? "Active" : "One-time allowance"}</span></div>
-          {!usage.data?.isPaid && <div className="ceyo-bar" role="progressbar" aria-label="Usage" aria-valuemin={0} aria-valuemax={100} aria-valuenow={usage.percent ?? 0}><i style={{ width: `${usage.percent ?? 0}%` }} /></div>}
-          <span className="ceyo-usage-percent">{usage.isPending ? "…" : usage.isError ? "Unavailable" : usage.data?.isPaid ? "Subscribed" : `${usage.percent}% used`}</span>
+          <div className="ceyo-usage-head"><strong>{usage.data?.isPaid ? "Subscription" : "Free trial"}</strong><span>{usage.data?.isPaid ? "Active" : usage.data?.trialActive ? `${usage.trialDays} of 3 days left` : "3 days, one time"}</span></div>
+          {!usage.data?.isPaid && <div className="ceyo-bar" role="progressbar" aria-label="Trial days used" aria-valuemin={0} aria-valuemax={3} aria-valuenow={3 - usage.trialDays}><i style={{ width: `${Math.round((3 - usage.trialDays) / 3 * 100)}%` }} /></div>}
+          <span className="ceyo-usage-percent">{usage.isPending ? "…" : usage.isError ? "Unavailable" : usage.data?.isPaid ? "Subscribed" : usage.data?.trialActive && usage.data.trialEndsAt ? `Ends ${new Date(usage.data.trialEndsAt).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}` : "Trial ended"}</span>
         </div>
       </div>
       <Group title="Plan">
         <Row label="Current plan" value={plan.charAt(0).toUpperCase() + plan.slice(1)} right={<span />} />
       </Group>
-      {usage.exhausted && <p className="ceyo-note" role="alert">{ar ? "نفد الاستخدام المجاني. اشترك علشان تكمل." : "Free usage exhausted. Subscribe to continue."}</p>}
+      {usage.exhausted && <p className="ceyo-note" role="alert">{ar ? "خلصت التجربة المجانية (3 أيام). اشترك علشان تكمل." : "Your 3-day free trial has ended. Subscribe to continue."}</p>}
       <Group>
         <Row label={ar ? "اشترك" : "Subscribe"} onClick={() => nav("/settings/plans")} />
         <Row label="Manage subscription" onClick={() => nav("/settings/subscription")} />
