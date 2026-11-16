@@ -28,6 +28,15 @@ describe("single active agent turn", () => {
     const turns = buildTranscript([{ id: "result", type: "agent.tool_result", part: { type: "tool_result", call_id: "save1", tool_name: "save_file", status: "ok", result: JSON.stringify({ type: "ceyo.file", id: "doc1", name: "report.txt" }) } }], "en", false);
     expect(turns.flatMap((turn) => turn.type === "agent" ? turn.cards : [])).toContainEqual({ kind: "file", id: "doc1", name: "report.txt" });
   });
+  it("retains saved message pins and their database ids", () => {
+    const turns = buildTranscript([
+      { id: "user-1", type: "user.message", pinned: true, content: [{ type: "text", text: "Keep this" }] },
+      { id: "run-1", type: "session.status_running", messageId: "database-message-1", pinned: true },
+      { id: "answer-1", type: "agent.message", parts: [{ type: "text", text: "Pinned answer", stream_id: "answer" }] },
+    ], "en", false);
+    expect(turns[0]).toMatchObject({ type: "user", id: "user-1", pinned: true });
+    expect(turns[1]).toMatchObject({ type: "agent", messageId: "database-message-1", pinned: true, text: "Pinned answer" });
+  });
   it("closes the earlier thinking segment when a user steers the same run", () => {
     const turns = buildTranscript([
       { id: "user1", type: "user.message", content: [{ type: "text", text: "Research" }] },

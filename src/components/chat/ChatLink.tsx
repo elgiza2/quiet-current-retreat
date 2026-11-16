@@ -31,7 +31,7 @@ function NamedLink({ url, label }: { url: URL; label?: ReactNode }) {
     }).catch(() => {}).finally(() => clearTimeout(timer));
     return () => { controller.abort(); clearTimeout(timer); };
   }, [url.href, named, plain, path, host]);
-  return <a href={url.href} target="_blank" rel="noopener noreferrer" title={title} className="cx-named-link">
+  return <a href={url.href} target="_blank" rel="noopener noreferrer" title={title} className="cx-named-link" data-source-link="">
     {iconFailed ? <Globe size={14} aria-hidden /> : <img src={siteIcon(url.hostname)} alt="" width={16} height={16} referrerPolicy="no-referrer" onError={(e) => { const img = e.currentTarget; if (!img.dataset.fb) { img.dataset.fb = "1"; img.src = siteIconFallback(url.hostname); } else setIconFailed(true); }} />}
     <span dir="auto">{title}</span><ArrowUpRight size={12} aria-hidden />
   </a>;

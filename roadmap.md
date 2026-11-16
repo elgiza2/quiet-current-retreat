@@ -1,3 +1,9 @@
+## Chat equations, sources and pins — 2026-11-16
+- [x] Render inline/block LaTeX without changing code blocks.
+- [x] Show safe web links as compact favicon capsules with readable titles.
+- [x] Pin/unpin messages from the existing message sheet, persist the choice in message metadata, and provide a quiet pinned-message shortcut.
+- [x] Run all 95 test files (372 tests); verify a real signed-in Akoya reply with a rendered equation/source, pin persistence after reload, unpin, and no phone overflow.
+
 ## Liquid-glass motion videos + voiceover — 2026-11-15
 - [x] create_voiceover (Cartesia, any language, male/female, word timings)
 - [x] create_motion_video glass renderer (title, cards, chat, image, cta; RTL)

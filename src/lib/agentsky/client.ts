@@ -285,6 +285,16 @@ export const agentApi = {
     if (error) fail(error);
     return {};
   },
+  setMessagePinned: async (id: string, pinned: boolean) => {
+    const user = await uid();
+    const { data: current, error: readError } = await db.from("messages").select("metadata").eq("id", id).eq("user_id", user).single();
+    if (readError) fail(readError);
+    const metadata = { ...(current?.metadata && typeof current.metadata === "object" ? current.metadata : {}), pinned };
+    const { data, error } = await db.from("messages").update({ metadata }).eq("id", id).eq("user_id", user).select("id").maybeSingle();
+    if (error) fail(error);
+    if (!data) throw new AgentApiError(404, "not_found", "Message not found");
+    return { pinned };
+  },
   events: async (id: string) => {
     const { data, error } = await db.from("messages").select("*").eq("conversation_id", id).order("created_at");
     if (error) fail(error);
@@ -295,14 +305,16 @@ export const agentApi = {
       if (m.role === "user") {
         if (embeddedUsers.has(m.id)) continue;
         const imgs: string[] = Array.isArray(m.metadata?.images) ? m.metadata.images : [];
-        events.push({ id: m.id, type: "user.message", voiceOrigin: m.metadata?.voiceOrigin, recordingId: m.metadata?.recordingId, at: m.created_at, content: [{ type: "text", text: m.content }, ...imgs.map((url) => ({ type: "image", source: { type: "url", url } }))] });
+        events.push({ id: m.id, type: "user.message", voiceOrigin: m.metadata?.voiceOrigin, recordingId: m.metadata?.recordingId, pinned: m.metadata?.pinned === true, at: m.created_at, content: [{ type: "text", text: m.content }, ...imgs.map((url) => ({ type: "image", source: { type: "url", url } }))] });
       } else {
         if (Array.isArray(m.metadata?.transcript)) {
-          events.push(...m.metadata.transcript);
+          const transcript = m.metadata.transcript as RawEvent[];
+          if (!transcript.some((event) => event.type === "session.status_running")) events.push({ id: m.id + "-run", type: "session.status_running", messageId: m.id, pinned: m.metadata?.pinned === true });
+          events.push(...transcript.map((event) => event.type === "session.status_running" ? { ...event, messageId: m.id, pinned: m.metadata?.pinned === true } : event));
           events.push({ id: m.id + "-idle", type: "session.status_idle", stop_reason: { type: "end_turn" } });
           continue;
         }
-        events.push({ id: m.id + "-run", type: "session.status_running" });
+        events.push({ id: m.id + "-run", type: "session.status_running", messageId: m.id, pinned: m.metadata?.pinned === true });
         for (const e of (m.metadata?.events ?? []) as RawEvent[]) events.push({ ...e, id: m.id + e.id });
         events.push({ id: m.id + "-t", type: "agent.message", parts: [{ type: "text", text: m.content, stream_id: m.id }] });
         events.push({ id: m.id + "-idle", type: "session.status_idle", stop_reason: { type: "end_turn" } });
@@ -347,6 +359,8 @@ export type RawEvent = {
   at?: string;
   voiceOrigin?: "recording";
   recordingId?: string;
+  messageId?: string;
+  pinned?: boolean;
   parts?: any[];
   part?: any;
   content?: any[];

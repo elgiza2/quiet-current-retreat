@@ -32,3 +32,25 @@ describe("in-chat drawings", () => {
     expect(document.querySelector("iframe.cx-visual-widget")).toBeNull();
   });
 });
+
+describe("readable answers", () => {
+  it("draws inline and display LaTeX, including backslash delimiters", () => {
+    const { container } = render(<FormattedAnswer text={"Euler: \\(e^{i\\pi}+1=0\\)\n\n\\[\\frac{-b\\pm\\sqrt{b^2-4ac}}{2a}\\]"} />);
+    expect(container.querySelectorAll(".katex")).toHaveLength(2);
+    expect(container.querySelector(".katex-display")).toBeInTheDocument();
+    expect(container.querySelector(".katex-html")?.textContent).not.toContain("\\frac");
+  });
+
+  it("leaves LaTeX-looking code unchanged", () => {
+    const { container } = render(<FormattedAnswer text={"```tex\n\\(x^2\\)\n```"} />);
+    expect(container.querySelector(".katex")).toBeNull();
+    expect(screen.getByText("\\(x^2\\)")).toBeInTheDocument();
+  });
+
+  it("shows a web source as a titled capsule with the site's favicon", () => {
+    render(<FormattedAnswer text={"Read [Ceyo launch notes](https://example.com/news/ceyo)."} />);
+    const link = screen.getByRole("link", { name: /Ceyo launch notes/ });
+    expect(link).toHaveAttribute("data-source-link");
+    expect(link.querySelector("img")).toHaveAttribute("src", "https://icons.duckduckgo.com/ip3/example.com.ico");
+  });
+});

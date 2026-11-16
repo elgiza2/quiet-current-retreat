@@ -31,10 +31,12 @@ export type Card =
 const DELIVERABLE = /\.(md|txt|csv|tsv|json|html?|xml|ya?ml|py|js|ts|tsx|jsx|css|sql|sh|svg)$/i;
 const MAX_INLINE = 400_000;
 
-export type UserTurn = { type: "user"; id: string; text: string; images: string[]; at?: string; voiceOrigin?: "recording"; recordingId?: string };
+export type UserTurn = { type: "user"; id: string; text: string; images: string[]; at?: string; voiceOrigin?: "recording"; recordingId?: string; pinned?: boolean };
 export type AgentTurn = {
   type: "agent";
   id: string;
+  messageId?: string;
+  pinned?: boolean;
   steps: Step[];
   text: string;
   messages?: string[];
@@ -252,12 +254,12 @@ function reasoningTitle(text: string, lang: Lang, done: boolean) {
 /* ---------- builder ---------- */
 
 type Flat =
-  | { k: "user"; id: string; text: string; images: string[]; at?: string; voiceOrigin?: "recording"; recordingId?: string }
+  | { k: "user"; id: string; text: string; images: string[]; at?: string; voiceOrigin?: "recording"; recordingId?: string; pinned?: boolean }
   | { k: "text"; id: string; stream: string; text: string }
   | { k: "reasoning"; id: string; stream: string; text: string }
   | { k: "call"; id: string; callId: string; name: string; args: any }
   | { k: "result"; id: string; callId: string; name: string; ok: boolean; result: any }
-  | { k: "run" }
+  | { k: "run"; messageId?: string; pinned?: boolean }
   | { k: "idle"; reason: string }
   | { k: "interrupt" }
   | { k: "error"; message: string };
@@ -299,7 +301,7 @@ function flatten(events: RawEvent[]): Flat[] {
       case "user.message": {
         if (e.internal) break;
         const u = userText(e.content);
-        out.push({ k: "user", id: e.id, text: u.text, images: u.images, at: e.at, voiceOrigin: e.voiceOrigin, recordingId: e.recordingId });
+        out.push({ k: "user", id: e.id, text: u.text, images: u.images, at: e.at, voiceOrigin: e.voiceOrigin, recordingId: e.recordingId, pinned: e.pinned });
         break;
       }
       case "agent.message":
@@ -311,7 +313,7 @@ function flatten(events: RawEvent[]): Flat[] {
         pushPart(e.part, e.id, 0);
         break;
       case "session.status_running":
-        out.push({ k: "run" });
+        out.push({ k: "run", messageId: e.messageId, pinned: e.pinned });
         break;
       case "session.status_idle":
         out.push({ k: "idle", reason: e.stop_reason?.type || "end_turn" });
@@ -373,16 +375,19 @@ export function buildTranscript(events: RawEvent[], lang: Lang, running: boolean
         // A message sent mid-run steers the same run; keep the agent turn open after it.
         const wasRunning = !!cur;
         if (cur) close();
-        turns.push({ type: "user", id: f.id, text: f.text, images: f.images, at: f.at, voiceOrigin: f.voiceOrigin, recordingId: f.recordingId });
+        turns.push({ type: "user", id: f.id, text: f.text, images: f.images, at: f.at, voiceOrigin: f.voiceOrigin, recordingId: f.recordingId, pinned: f.pinned });
         if (wasRunning) {
           cur = null;
           agent();
         }
         break;
       }
-      case "run":
-        agent();
+      case "run": {
+        const t = agent();
+        if (f.messageId) t.messageId = f.messageId;
+        if (typeof f.pinned === "boolean") t.pinned = f.pinned;
         break;
+      }
       case "text": {
         const t = agent();
         if (!textByStream.has(f.stream)) textStreams.push(f.stream);

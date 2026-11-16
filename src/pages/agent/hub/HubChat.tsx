@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { FormattedAnswer } from "@/components/chat/FormattedAnswer";
 import { ChatLink } from "@/components/chat/ChatLink";
+import { PinnedMessages } from "@/components/chat/PinnedMessages";
 import {
   ArrowUp,
   ChevronDown,
@@ -16,6 +17,8 @@ import {
   Paperclip,
   Camera,
   ImageIcon,
+  Pin,
+  PinOff,
   Reply,
   Search,
   SmilePlus,
@@ -72,6 +75,8 @@ type Bubble = {
   partIndex: number;
   lastPart: boolean;
   turnIndex: number;
+  messageId?: string;
+  pinned?: boolean;
 };
 
 function fmtTime(at?: string) {
@@ -290,6 +295,7 @@ export function HubChat({
   const [replyTo, setReplyTo] = useState<string | null>(null);
   const [selectable, setSelectable] = useState<string | null>(null);
   const [reactions, setReactions] = useState<Record<string, string>>({});
+  const [pinOverrides, setPinOverrides] = useState<Record<string, boolean>>({});
   const [swipe, setSwipe] = useState(0);
   const swipeStart = useRef<{ x: number; y: number; active: boolean } | null>(null);
   const press = useRef<number | null>(null);
@@ -304,7 +310,7 @@ export function HubChat({
   const lastAgent = useMemo(() => [...s.turns].reverse().find((t) => t.type === "agent") as AgentTurn | undefined, [s.turns]);
   const orb = orbStateFor(lastAgent, s.running);
 
-  useEffect(() => { setMenuOpen(false); setFindOpen(false); setFindQuery(""); setSheet(null); setReplyTo(null); }, [agent.id, sessionId]);
+  useEffect(() => { setMenuOpen(false); setFindOpen(false); setFindQuery(""); setSheet(null); setReplyTo(null); setPinOverrides({}); }, [agent.id, sessionId]);
   const pinnedRef = useRef(pinned);
   pinnedRef.current = pinned;
   useLayoutEffect(() => { const el = scroller.current; if (el && pinned) el.scrollTop = el.scrollHeight; }, [s.turns, s.queue, pinned]);
@@ -405,7 +411,8 @@ export function HubChat({
       if (turn.type === "user") {
         if (/^\[reacted \S+ to: /.test(turn.text || "")) return;
         lastAt = turn.at || lastAt;
-        out.push({ key: turn.id, turnId: turn.id, role: "user", text: turn.text, at: turn.at, turn, partIndex: 0, lastPart: true, turnIndex });
+        const messageId = demo ? undefined : turn.messageId || turn.id;
+        out.push({ key: turn.id, turnId: turn.id, role: "user", text: turn.text, at: turn.at, turn, partIndex: 0, lastPart: true, turnIndex, messageId, pinned: messageId ? pinOverrides[messageId] ?? turn.pinned === true : false });
         return;
       }
       const parsed = group ? groupTranscript(turn.text || "") : (turn.messages?.length ? turn.messages : [turn.text || ""]).map((text: string) => ({ speaker: "", text }));
@@ -417,11 +424,40 @@ export function HubChat({
       });
       parts.forEach((part, partIndex) => {
         const speaker = group && part.speaker ? agents.find((a) => group.memberIds.includes(a.id) && a.name === part.speaker) : undefined;
-        out.push({ key: `${turn.id}-${partIndex}`, turnId: turn.id, role: "agent", text: part.text, at: lastAt, speaker: speaker || agent, turn, partIndex, lastPart: partIndex === parts.length - 1, turnIndex });
+        const messageId = demo ? undefined : turn.messageId;
+        out.push({ key: `${turn.id}-${partIndex}`, turnId: turn.id, role: "agent", text: part.text, at: lastAt, speaker: speaker || agent, turn, partIndex, lastPart: partIndex === parts.length - 1, turnIndex, messageId, pinned: messageId ? pinOverrides[messageId] ?? turn.pinned === true : false });
       });
     });
     return out;
-  }, [s.turns, group, agents, agent, demo, ar, firstMessage, sessionId]);
+  }, [s.turns, group, agents, agent, demo, ar, firstMessage, sessionId, pinOverrides]);
+
+  const pinnedBubbles = useMemo(() => {
+    const seen = new Set<string>();
+    return bubbles.filter((bubble) => {
+      if (!bubble.pinned || !bubble.messageId || !bubble.text || (bubble.role === "agent" && !bubble.lastPart) || seen.has(bubble.messageId)) return false;
+      seen.add(bubble.messageId);
+      return true;
+    });
+  }, [bubbles]);
+
+  const openPinned = (key: string) => {
+    setPinned(false);
+    document.getElementById(`cx-${key}`)?.scrollIntoView({ block: "center", behavior: "smooth" });
+  };
+
+  const togglePin = async (bubble: Bubble) => {
+    const messageId = bubble.messageId;
+    if (!messageId || demo) return;
+    const next = !bubble.pinned;
+    setPinOverrides((current) => ({ ...current, [messageId]: next }));
+    setSheet(null);
+    try {
+      await agentApi.setMessagePinned(messageId, next);
+    } catch (error) {
+      setPinOverrides((current) => ({ ...current, [messageId]: !next }));
+      setToast({ title: ar ? "التثبيت ما كملش" : "Could not update the pin", body: error instanceof Error ? error.message : undefined, tone: "error" });
+    }
+  };
 
   const q = findQuery.trim();
   const matches = useMemo(() => (q ? bubbles.filter((b) => b.text.toLowerCase().includes(q.toLowerCase())).map((b) => b.key) : []), [bubbles, q]);
@@ -487,7 +523,7 @@ export function HubChat({
   const empty = bubbles.length === 0;
 
   return (
-    <section className="cx-chat" aria-label={`${title} conversation`}>
+    <section className="cx-chat" data-has-pins={pinnedBubbles.length > 0 || undefined} aria-label={`${title} conversation`}>
       <header className="cx-head">
         <button type="button" className="cx-circle cx-glass" aria-label={ar ? "رجوع" : "Back"} onClick={onBack}><ChevronLeft size={22} /></button>
         <button type="button" className="cx-title-pill cx-glass" onClick={onProfile}>
@@ -511,6 +547,13 @@ export function HubChat({
           </div>
         )}
       </header>
+
+      <PinnedMessages
+        messages={pinnedBubbles.map((bubble) => ({ key: bubble.key, text: bubble.text, speaker: bubble.role === "agent" ? bubble.speaker?.name || title : undefined }))}
+        ar={ar}
+        onOpen={openPinned}
+        onUnpin={(key) => { const bubble = bubbles.find((item) => item.key === key); if (bubble) void togglePin(bubble); }}
+      />
 
       {toast && (
         <div className="cx-toast" data-tone={toast.tone} role="status">
@@ -673,6 +716,7 @@ export function HubChat({
               <button type="button" aria-label="More reactions" onClick={() => { const v = window.prompt(ar ? "اكتب إيموجي" : "Type an emoji")?.trim(); if (v) react(sheet.key, v.slice(0, 4)); }}><SmilePlus size={22} /></button>
             </div>
             <div className="cx-sheet-group">
+              {sheet.messageId && !demo && <button type="button" onClick={() => void togglePin(sheet)}>{sheet.pinned ? <PinOff size={20} /> : <Pin size={20} />}{sheet.pinned ? (ar ? "إلغاء التثبيت" : "Unpin") : (ar ? "تثبيت" : "Pin")}</button>}
               <button type="button" onClick={() => { setReplyTo(sheet.text); setSheet(null); }}><Reply size={20} />{ar ? "رد" : "Reply"}</button>
               <button type="button" onClick={() => { onMarkUnread?.(); setSheet(null); setToast({ title: ar ? "اتعلمت غير مقروءة" : "Marked as unread" }); }}><MessageSquareDot size={20} />{ar ? "علّمها غير مقروءة" : "Mark as unread"}</button>
             </div>
